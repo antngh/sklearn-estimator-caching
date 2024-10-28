@@ -549,7 +549,7 @@ class EstimatorCachingWrapper:
             )
         except FileNotFoundError:
             logger.warning(
-                f"Failed to load fitted estimator from file, so not running "
+                f"Failed to load fitted estimator from file, so running "
                 f"{self._estimator_classname}.fit"
             )
 
