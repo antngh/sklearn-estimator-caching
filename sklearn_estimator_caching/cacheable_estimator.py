@@ -144,13 +144,42 @@ class EstimatorCachingWrapper:
         Any
             The attribute (property or method) from the estimator
         """
+        if "estimator" not in self.__dict__:
+            raise AttributeError(
+                f"{self.__class__.__name__} object has no attribute {attr}"
+            )
+
         # Delegate attribute access to the original estimator.
         # This allows this wrapper to be called internally by sklearn as if it
         # was the estimator itself
-        logger.debug(
-            f"Getting attribute {attr} from estimator {self.estimator}",
-        )
         return getattr(self.estimator, attr)
+
+    def __setattr__(self, attr: str, value: Any):
+        """
+        Set an attribute of the correct wrapper class instance.
+
+        Checks if the attribute is on the estimator and warns if it is.
+
+        Parameters
+        ----------
+        attr: str
+            The attribute to set
+        value: Any
+            The value to set the attribute to
+        """
+        if (
+            not attr == "estimator"
+            and "estimator" in self.__dict__
+            and hasattr(self.estimator, attr)
+        ):
+            msg = (
+                f"Setting an attribute on {self.__class__.__name__}. "
+                f"To access properties of the estimator please use get_params and "
+                f"set_params."
+            )
+            logger.warning(msg)
+
+        object.__setattr__(self, attr, value)
 
     def get_params(self, deep: bool = True) -> dict[str, Any]:
         """

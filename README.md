@@ -1,5 +1,7 @@
 # sklearn-estimator-caching
-A wrapper for sklearn estimators for automatically saving and loading estimators and data for expensive fit/predict/transform calls
+A wrapper for sklearn estimators for automatically saving and loading estimators and data for expensive `fit`/`predict`/`transform` calls.
+
+If you are just trying to speed up `fit` calls then you are better off looking into the `memory` option of the sklearn `Pipeline` class. The code here is mainly useful for slow inference.
 
 # Overview
 
@@ -43,3 +45,14 @@ Because both the estimator instance and the input data to the method are checked
 
 # Contact People
 This code was written by [antngh](https://github.com/antngh)
+
+# Disclaimer
+Whilst I may try to maintain it, I make no promises.
+
+At the time of writing, it worked with the following package versions:
+```
+scikit-learn==1.5.2
+polars==1.12.0
+pandas==2.2.3
+numpy==1.26.4
+```
