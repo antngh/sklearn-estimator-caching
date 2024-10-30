@@ -67,11 +67,11 @@ class EstimatorCachingWrapper:
         """
         # DON'T USE KWARGS. This is needed for when sklearn decides to clone it behind
         # the scenes
+        self.experiment_save_path = experiment_save_path
+
         self.estimator: BaseEstimator = (
             clone(estimator) if not _kwargs else type(estimator)(**_kwargs)
         )
-
-        self.experiment_save_path = experiment_save_path
 
         logger.debug(
             f"Created estimator wrapper that wraps a {self._estimator_classname} "
@@ -144,6 +144,11 @@ class EstimatorCachingWrapper:
         Any
             The attribute (property or method) from the estimator
         """
+        if "estimator" not in self.__dict__:
+            raise AttributeError(
+                f"{self.__class__.__name__} object has no attribute {attr}"
+            )
+
         # Delegate attribute access to the original estimator.
         # This allows this wrapper to be called internally by sklearn as if it
         # was the estimator itself
@@ -151,12 +156,10 @@ class EstimatorCachingWrapper:
 
     def __setattr__(self, attr: str, value: Any):
         """
-        Set an attribute to the correct class instance.
+        Set an attribute of the correct class instance.
 
-        If the attribute is a property of the wrapper and not the estimator then set it
-        as an attribute of the wrapper. Otherwise if the estimator has that property,
-        or neither the wrapper nor the estimator have the property, then set it as an
-        attribute of the estimator.
+        If the attribute is a property of the estimator then set it on the estimator,
+        otherwise set it as a property of the wrapper.
 
         Parameters
         ----------
@@ -165,12 +168,15 @@ class EstimatorCachingWrapper:
         value: Any
             The value to set the attribute to
         """
-        # hasattr called on the wrapper will be true if either the wrapper or the
-        # estimator has the attribute
-        if hasattr(self, attr) and not hasattr(self.estimator, attr):
-            object.__setattr__(self, attr, value)
-        else:
+        if (
+            not attr == "estimator"
+            and "estimator" in self.__dict__
+            and hasattr(self.estimator, attr)
+        ):
             setattr(self.estimator, attr, value)
+            return
+
+        object.__setattr__(self, attr, value)
 
     def get_params(self, deep: bool = True) -> dict[str, Any]:
         """
