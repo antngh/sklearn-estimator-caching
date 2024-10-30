@@ -147,10 +147,30 @@ class EstimatorCachingWrapper:
         # Delegate attribute access to the original estimator.
         # This allows this wrapper to be called internally by sklearn as if it
         # was the estimator itself
-        logger.debug(
-            f"Getting attribute {attr} from estimator {self.estimator}",
-        )
         return getattr(self.estimator, attr)
+
+    def __setattr__(self, attr: str, value: Any):
+        """
+        Set an attribute to the correct class instance.
+
+        If the attribute is a property of the wrapper and not the estimator then set it
+        as an attribute of the wrapper. Otherwise if the estimator has that property,
+        or neither the wrapper nor the estimator have the property, then set it as an
+        attribute of the estimator.
+
+        Parameters
+        ----------
+        attr: str
+            The attribute to set
+        value: Any
+            The value to set the attribute to
+        """
+        # hasattr called on the wrapper will be true if either the wrapper or the
+        # estimator has the attribute
+        if hasattr(self, attr) and not hasattr(self.estimator, attr):
+            object.__setattr__(self, attr, value)
+        else:
+            setattr(self.estimator, attr, value)
 
     def get_params(self, deep: bool = True) -> dict[str, Any]:
         """
