@@ -2,12 +2,10 @@ import itertools
 from pathlib import Path
 
 import pytest
-from data_science_common.utils.sklearn_pipelines.caching.cacheable_estimator import (
-    EstimatorCachingWrapper,
-)
 from sklearn.base import clone
 
-from tests.utils.sklearn_pipelines.caching.conftest import DummyEstimator
+from sklearn_estimator_caching.cacheable_estimator import EstimatorCachingWrapper
+from tests.conftest import DummyEstimator
 
 
 class EstimatorCachingWrapperChild(EstimatorCachingWrapper):
@@ -98,33 +96,6 @@ def test__EstimatorCachingWrapper_mimicks_estimator():
     assert wrapped_estimator.estimator.some_other_method() == -10
 
 
-# def test_test_EstimatorCachingWrapper_getattr_and_setattr(
-#     raw_estimator_wrapped_estimator,
-# ):
-#     assert False
-#     raw_estimator, wrapped_estimator = raw_estimator_wrapped_estimator
-#     wrapped_estimator.some_attr = 123
-#     assert wrapped_estimator.some_attr == 123
-#     assert wrapped_estimator.estimator.some_attr == 123
-#     assert wrapped_estimator.some_attr == wrapped_estimator.estimator.some_attr
-
-#     wrapped_estimator.some_attr = 456
-#     assert wrapped_estimator.some_attr == 456
-#     assert wrapped_estimator.estimator.some_attr == 456
-#     assert wrapped_estimator.some_attr == wrapped_estimator.estimator.some_attr
-
-#     del wrapped_estimator.some_attr
-#     with pytest.raises(AttributeError):
-#         _ = wrapped_estimator.some_attr
-#     with pytest.raises(AttributeError):
-#         _ = wrapped_estimator.estimator.some_attr
-
-#     with pytest.raises(AttributeError):
-#         _ = wrapped_estimator.some_non_existent_attr
-#     with pytest.raises(AttributeError):
-#         _ = wrapped_estimator.estimator.some_non_existent_attr
-
-
 def test_EstimatorCachingWrapper_get_params(raw_estimator_wrapped_estimator):
     raw_estimator, wrapped_estimator = raw_estimator_wrapped_estimator
     wrapper_params = wrapped_estimator.get_params(deep=True)
@@ -188,7 +159,7 @@ def test_EstimatorCachingWrapper_predict_transform_runner(
     raw_estimator, wrapped_estimator = raw_estimator_wrapped_estimator
 
     mocked_load_process_data_from_file = mocker.patch(
-        "data_science_common.utils.sklearn_pipelines.caching.cacheable_estimator.load_process_data_from_file",
+        "sklearn_estimator_caching.cacheable_estimator.load_processed_data_from_file",
         return_value="loaded_data",
     )
 
@@ -205,14 +176,14 @@ def test_EstimatorCachingWrapper_predict_transform_runner(
     mocked_load_process_data_from_file.assert_called_once_with(
         experiment_save_path=Path("experiment_save_path"),
         process_data_func_name=process_data_func,
-        fitted_estimator_process_method_metadata=metadata,
+        fitted_estimator_process_metadata=metadata,
     )
 
     def bad_file_load(*args, **kwargs):
         raise FileNotFoundError
 
     mocker.patch(
-        "data_science_common.utils.sklearn_pipelines.caching.cacheable_estimator.load_process_data_from_file",
+        "sklearn_estimator_caching.cacheable_estimator.load_processed_data_from_file",
         side_effect=bad_file_load,
     )
     estimator_func = mocker.patch.object(
@@ -221,7 +192,7 @@ def test_EstimatorCachingWrapper_predict_transform_runner(
         return_value="estimator_func_output_mock",
     )
     save_patch = mocker.patch(
-        "data_science_common.utils.sklearn_pipelines.caching.cacheable_estimator.save_process_data_to_file",
+        "sklearn_estimator_caching.cacheable_estimator.save_processed_data_to_file",
     )
     assert (
         wrapped_estimator._predict_transform_runner(
@@ -235,7 +206,7 @@ def test_EstimatorCachingWrapper_predict_transform_runner(
         experiment_save_path=Path("experiment_save_path"),
         process_data_func_name=process_data_func,
         save_data="estimator_func_output_mock",
-        fitted_estimator_process_method_metadata=metadata,
+        fitted_estimator_process_metadata=metadata,
     )
 
 
@@ -268,7 +239,7 @@ def test_EstimatorCachingWrapper_fit(raw_estimator_wrapped_estimator, mocker):
     setattr(wrapped_estimator.estimator, "fit", lambda: "some_method_output")
 
     mock_load_fitted_estimator_from_file = mocker.patch(
-        "data_science_common.utils.sklearn_pipelines.caching.cacheable_estimator.load_fitted_estimator_from_file",
+        "sklearn_estimator_caching.cacheable_estimator.load_fitted_estimator_from_file",
         return_value="the_loaded_estimator",
     )
     wrapped_estimator_ = wrapped_estimator.fit(
@@ -290,14 +261,14 @@ def test_EstimatorCachingWrapper_fit(raw_estimator_wrapped_estimator, mocker):
         raise FileNotFoundError
 
     mocker.patch(
-        "data_science_common.utils.sklearn_pipelines.caching.cacheable_estimator.load_fitted_estimator_from_file",
+        "sklearn_estimator_caching.cacheable_estimator.load_fitted_estimator_from_file",
         side_effect=raise_fnf_error,
     )
     mock_estimator_fit = mocker.patch.object(
         wrapped_estimator.estimator, "fit", return_value="the_fit_estimator"
     )
     mock_save_fitted_estimator_to_file = mocker.patch(
-        "data_science_common.utils.sklearn_pipelines.caching.cacheable_estimator.save_fitted_estimator_to_file",
+        "sklearn_estimator_caching.cacheable_estimator.save_fitted_estimator_to_file",
     )
 
     wrapped_estimator_ = wrapped_estimator.fit(
@@ -398,11 +369,11 @@ def test_EstimatorCachingWrapper_fit_and_process_runner_when_has_fit_func_method
     )
 
     mock_load_fitted_estimator_from_file = mocker.patch(
-        "data_science_common.utils.sklearn_pipelines.caching.cacheable_estimator.load_fitted_estimator_from_file",
+        "sklearn_estimator_caching.cacheable_estimator.load_fitted_estimator_from_file",
         return_value=wrapped_estimator.estimator,
     )
     mock_load_process_data_from_file = mocker.patch(
-        "data_science_common.utils.sklearn_pipelines.caching.cacheable_estimator.load_process_data_from_file",
+        "sklearn_estimator_caching.cacheable_estimator.load_processed_data_from_file",
         return_value="loaded_data",
     )
     assert (
@@ -418,14 +389,14 @@ def test_EstimatorCachingWrapper_fit_and_process_runner_when_has_fit_func_method
     mock_load_process_data_from_file.assert_called_once_with(
         experiment_save_path=wrapped_estimator.experiment_save_path,
         process_data_func_name=process_func,
-        fitted_estimator_process_method_metadata='{"estimator_name": "DummyEstimator", "estimator_params": {"a": 1, "b": 2}, "_get_metadata_kwargs": {"X": "input_data"}}',
+        fitted_estimator_process_metadata='{"estimator_name": "DummyEstimator", "estimator_params": {"a": 1, "b": 2}, "_get_metadata_kwargs": {"X": "input_data"}}',
     )
 
     def raise_fnf_error(*args, **kwargs):
         raise FileNotFoundError
 
     mock_load_process_data_from_file = mocker.patch(
-        "data_science_common.utils.sklearn_pipelines.caching.cacheable_estimator.load_process_data_from_file",
+        "sklearn_estimator_caching.cacheable_estimator.load_processed_data_from_file",
         side_effect=raise_fnf_error,
     )
     mock_estimator_func = mocker.patch.object(
@@ -440,7 +411,7 @@ def test_EstimatorCachingWrapper_fit_and_process_runner_when_has_fit_func_method
     mock_load_process_data_from_file.assert_called_once_with(
         experiment_save_path=wrapped_estimator.experiment_save_path,
         process_data_func_name=process_func,
-        fitted_estimator_process_method_metadata='{"estimator_name": "DummyEstimator", "estimator_params": {"a": 1, "b": 2}, "_get_metadata_kwargs": {"X": "input_data"}}',
+        fitted_estimator_process_metadata='{"estimator_name": "DummyEstimator", "estimator_params": {"a": 1, "b": 2}, "_get_metadata_kwargs": {"X": "input_data"}}',
     )
     mock_estimator_func.assert_called_once_with(X="input_data")
 
@@ -463,7 +434,7 @@ def test_EstimatorCachingWrapper_fit_and_process_runner_when_has_fit_func_method
         raise FileNotFoundError
 
     mock_load_fitted_estimator_from_file = mocker.patch(
-        "data_science_common.utils.sklearn_pipelines.caching.cacheable_estimator.load_fitted_estimator_from_file",
+        "sklearn_estimator_caching.cacheable_estimator.load_fitted_estimator_from_file",
         side_effect=raise_fnf_error,
     )
     mock_estimator_fit_and_func = mocker.patch.object(
@@ -472,13 +443,13 @@ def test_EstimatorCachingWrapper_fit_and_process_runner_when_has_fit_func_method
         return_value="some_fit_and_inference_output",
     )
     mock_save_fitted_estimator_to_file = mocker.patch(
-        "data_science_common.utils.sklearn_pipelines.caching.cacheable_estimator.save_fitted_estimator_to_file",
+        "sklearn_estimator_caching.cacheable_estimator.save_fitted_estimator_to_file",
     )
     mock_save_process_data_to_file = mocker.patch(
-        "data_science_common.utils.sklearn_pipelines.caching.cacheable_estimator.save_process_data_to_file",
+        "sklearn_estimator_caching.cacheable_estimator.save_processed_data_to_file",
     )
     mock_load_process_data_from_file = mocker.patch(
-        "data_science_common.utils.sklearn_pipelines.caching.cacheable_estimator.load_process_data_from_file",
+        "sklearn_estimator_caching.cacheable_estimator.load_processed_data_from_file",
         return_value="loaded_data",
     )
     assert (
@@ -503,6 +474,6 @@ def test_EstimatorCachingWrapper_fit_and_process_runner_when_has_fit_func_method
         experiment_save_path=wrapped_estimator.experiment_save_path,
         save_data="some_fit_and_inference_output",
         process_data_func_name=process_func,
-        fitted_estimator_process_method_metadata='{"estimator_name": "DummyEstimator", "estimator_params": {"a": 1, "b": 2}, "_get_metadata_kwargs": {"X": "input_data"}}',
+        fitted_estimator_process_metadata='{"estimator_name": "DummyEstimator", "estimator_params": {"a": 1, "b": 2}, "_get_metadata_kwargs": {"X": "input_data"}}',
     )
     mock_load_process_data_from_file.assert_not_called()

@@ -67,11 +67,11 @@ class EstimatorCachingWrapper:
         """
         # DON'T USE KWARGS. This is needed for when sklearn decides to clone it behind
         # the scenes
-        self.experiment_save_path = experiment_save_path
-
         self.estimator: BaseEstimator = (
             clone(estimator) if not _kwargs else type(estimator)(**_kwargs)
         )
+
+        self.experiment_save_path = experiment_save_path
 
         logger.debug(
             f"Created estimator wrapper that wraps a {self._estimator_classname} "
@@ -156,10 +156,9 @@ class EstimatorCachingWrapper:
 
     def __setattr__(self, attr: str, value: Any):
         """
-        Set an attribute of the correct class instance.
+        Set an attribute of the correct wrapper class instance.
 
-        If the attribute is a property of the estimator then set it on the estimator,
-        otherwise set it as a property of the wrapper.
+        Checks if the attribute is on the estimator and warns if it is.
 
         Parameters
         ----------
@@ -173,8 +172,12 @@ class EstimatorCachingWrapper:
             and "estimator" in self.__dict__
             and hasattr(self.estimator, attr)
         ):
-            setattr(self.estimator, attr, value)
-            return
+            msg = (
+                f"Setting an attribute on {self.__class__.__name__}. "
+                f"To access properties of the estimator please use get_params and "
+                f"set_params."
+            )
+            logger.warning(msg)
 
         object.__setattr__(self, attr, value)
 

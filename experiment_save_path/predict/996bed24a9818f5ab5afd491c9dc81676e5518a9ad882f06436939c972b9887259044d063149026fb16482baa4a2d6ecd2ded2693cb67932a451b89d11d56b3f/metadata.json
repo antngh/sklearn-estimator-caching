@@ -1,0 +1,1 @@
+{"estimator_name": "DummyEstimator", "estimator_params": {"a": 1, "b": 2}, "_get_metadata_kwargs": {"X": "input_data"}}
